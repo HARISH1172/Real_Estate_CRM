@@ -13,7 +13,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/leads")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173/")
+@CrossOrigin(origins = "http://localhost:5173")
 public class LeadController {
 
     private final LeadService leadService;
@@ -37,19 +37,19 @@ public class LeadController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public LeadDTO updateLead(@PathVariable UUID id, @RequestBody LeadDTO dto) {
         return leadService.updateLead(id, dto);
     }
 
-    @PatchMapping("/{id}/assign/{agentEmail}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public void assignLead(@PathVariable UUID id, @PathVariable String agentEmail) {
+    @PatchMapping("/{id}/assign")
+    @PreAuthorize("hasRole('MANAGER')")
+    public void assignLead(@PathVariable UUID id, @RequestParam(required = false) String agentEmail) {
         leadService.assignLead(id, agentEmail);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public void deleteLead(@PathVariable UUID id) {
         leadService.deleteLead(id);
     }
@@ -58,5 +58,11 @@ public class LeadController {
     @PreAuthorize("hasAnyRole('MANAGER', 'AGENT')")
     public LeadDTO updateLeadStatus(@PathVariable UUID id, @RequestParam LeadStatus status) {
         return leadService.updateLeadStatus(id, status);
+    }
+
+    @GetMapping("/agent/{agentEmail:.+}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public List<LeadDTO> getLeadsByAgent(@PathVariable String agentEmail) {
+        return leadService.getLeadsByAgent(agentEmail);
     }
 }

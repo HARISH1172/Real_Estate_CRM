@@ -28,6 +28,8 @@ public class RegisterRequestDTO {
     private String phone;
 
     private Role role;
+    
+    private String assignedCity;
 
     @Valid
     private Address address;

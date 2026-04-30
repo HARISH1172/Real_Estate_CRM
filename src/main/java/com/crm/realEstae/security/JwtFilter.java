@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -42,32 +44,45 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractEmail(token);
 
-        if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
+                UserDetails userDetails =
+                        userDetailsService.loadUserByUsername(email);
 
-            if (jwtUtil.validateToken(token, userDetails)) {
+                if (jwtUtil.validateToken(token, userDetails)) {
 
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
 
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request)
-                );
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource()
+                                    .buildDetails(request)
+                    );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authToken);
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authToken);
+                }
             }
+        } catch (ExpiredJwtException e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token expired");
+            return;
+        } catch (SignatureException e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid token signature");
+            return;
+        } catch (Exception e) {
+            // Log other errors but don't set auth context
+            logger.error("Could not set user authentication", e);
         }
 
         filterChain.doFilter(request, response);

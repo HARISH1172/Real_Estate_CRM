@@ -42,6 +42,8 @@ public class User implements UserDetails {
     private Address address;
 
     private boolean approved = false;
+    
+    private String assignedCity;
 
     @ManyToOne
     @JoinColumn(name = "assigned_manager_id")

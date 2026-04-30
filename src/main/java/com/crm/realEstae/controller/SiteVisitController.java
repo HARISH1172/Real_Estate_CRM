@@ -18,7 +18,7 @@ public class SiteVisitController {
     private final SiteVisitService siteVisitService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AGENT')")
+    @PreAuthorize("hasAnyRole('AGENT')")
     public SiteVisitDTO scheduleVisit(@RequestBody SiteVisitDTO dto) {
         return siteVisitService.scheduleVisit(dto);
     }
@@ -30,7 +30,7 @@ public class SiteVisitController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AGENT')")
+    @PreAuthorize("hasAnyRole('AGENT')")
     public SiteVisitDTO updateStatus(@PathVariable UUID id, @RequestParam VisitStatus status) {
         return siteVisitService.updateVisitStatus(id, status);
     }

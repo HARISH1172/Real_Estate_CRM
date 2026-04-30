@@ -16,6 +16,7 @@ public interface UserRepository extends JpaRepository<User, java.util.UUID> {
     java.util.List<User> findByRoleAndApproved(Role role, boolean approved);
     long countByRole(Role role);
     java.util.List<User> findByAssignedManager(User manager);
+    long countByAssignedManager(User manager);
 
 
 }

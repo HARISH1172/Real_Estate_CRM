@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/dashboard")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173/")
+@CrossOrigin(origins = "http://localhost:5173")
 public class DashboardController {
 
     private final DashboardService dashboardService;
@@ -21,5 +21,11 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AGENT')")
     public DashboardDTO getDashboardStats(java.security.Principal principal) {
         return dashboardService.getDashboardStats(principal.getName());
+    }
+
+    @GetMapping("/daily-trend")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AGENT')")
+    public java.util.List<com.crm.realEstae.dto.MonthlyTrendDTO> getDailyTrend(java.security.Principal principal, @org.springframework.web.bind.annotation.RequestParam String month) {
+        return dashboardService.getDailyTrendForMonth(principal.getName(), month);
     }
 }

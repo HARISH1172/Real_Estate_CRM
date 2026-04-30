@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173/")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AdminController {
 
     private final AdminService adminService;
@@ -17,14 +17,14 @@ public class AdminController {
 
     @GetMapping("/agents")
     @PreAuthorize("hasRole('ADMIN')")
-    public java.util.List<com.crm.realEstae.entity.User> getAllAgents() {
-        return userRepository.findByRole(com.crm.realEstae.entity.enums.Role.AGENT);
+    public java.util.List<com.crm.realEstae.dto.UserDTO> getAllAgents() {
+        return adminService.getAllAgents();
     }
 
     @GetMapping("/managers")
     @PreAuthorize("hasRole('ADMIN')")
-    public java.util.List<com.crm.realEstae.entity.User> getAllManagers() {
-        return userRepository.findByRole(com.crm.realEstae.entity.enums.Role.MANAGER);
+    public java.util.List<com.crm.realEstae.dto.UserDTO> getAllManagers() {
+        return adminService.getAllManagers();
     }
 
     @PostMapping("/create-manager")
@@ -33,21 +33,27 @@ public class AdminController {
         return adminService.createManager(request);
     }
 
-    @PutMapping("/user/{email}")
+    @PutMapping("/user/{email:.+}")
     @PreAuthorize("hasRole('ADMIN')")
     public String updateUser(@PathVariable String email, @RequestBody RegisterRequestDTO request) {
         return adminService.updateUser(email, request);
     }
 
-    @DeleteMapping("/user/{email}")
+    @DeleteMapping("/user/{email:.+}")
     @PreAuthorize("hasRole('ADMIN')")
     public String deleteUser(@PathVariable String email) {
         return adminService.deleteUser(email);
     }
 
-    @PatchMapping("/approve-agent/{agentEmail}")
+    @PatchMapping("/approve-agent/{agentEmail:.+}")
     @PreAuthorize("hasRole('ADMIN')")
     public String approveAgent(@PathVariable String agentEmail, @RequestParam String managerEmail) {
         return adminService.approveAgent(agentEmail, managerEmail);
+    }
+
+    @PatchMapping("/agents/{email:.+}/assign-manager")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void assignManagerToAgent(@PathVariable String email, @RequestParam(required = false) String managerEmail) {
+        adminService.assignManagerToAgent(email, managerEmail);
     }
 }

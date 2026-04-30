@@ -25,4 +25,8 @@ public class DashboardDTO {
     private Map<String, Long> statusBreakdown;
     private List<MonthlyTrendDTO> monthlyTrend;
 
+    private long totalProperties;
+    private Map<String, Long> propertyTypeBreakdown;
+    private Map<String, Long> cityBreakdown;
+    private List<MonthlyTrendDTO> dailyTrend;
 }

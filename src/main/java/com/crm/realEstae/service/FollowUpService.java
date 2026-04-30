@@ -4,6 +4,7 @@ package com.crm.realEstae.service;
 import com.crm.realEstae.dto.FollowUpDTO;
 import com.crm.realEstae.entity.FollowUp;
 import com.crm.realEstae.entity.Lead;
+import com.crm.realEstae.entity.enums.FollowUpStatus;
 import com.crm.realEstae.repository.FollowUpRepository;
 import com.crm.realEstae.repository.LeadRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ public class FollowUpService {
                 .collect(Collectors.toList());
     }
 
-    public FollowUpDTO updateFollowUpStatus(UUID id, com.crm.realEstae.entity.enums.FollowUpStatus status) {
+    public FollowUpDTO updateFollowUpStatus(UUID id, FollowUpStatus status) {
         FollowUp followUp = followUpRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Follow-up not found"));
         followUp.setStatus(status);

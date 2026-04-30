@@ -43,8 +43,6 @@ public class Property {
     @JoinColumn(name = "assigned_agent_id")
     private User assignedAgent;
 
-    private String status; // Available, Sold, Under Construction, etc.
-
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -52,9 +50,6 @@ public class Property {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (status == null) {
-            status = "Available";
-        }
     }
 
     @PreUpdate

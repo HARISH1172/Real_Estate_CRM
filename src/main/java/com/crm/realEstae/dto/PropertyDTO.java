@@ -19,6 +19,5 @@ public class PropertyDTO {
     private String assignedManagerName;
     private UUID assignedAgentId;
     private String assignedAgentName;
-    private String status;
     private LocalDateTime createdAt;
 }

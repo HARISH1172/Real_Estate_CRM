@@ -14,4 +14,6 @@ public class AgentPerformanceDTO {
     private String agentName;
     private long totalLeads;
     private long totalBookings;
+    private double conversionRate;
+    private java.util.Map<String, Long> statusBreakdown;
 }

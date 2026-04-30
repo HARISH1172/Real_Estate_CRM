@@ -28,4 +28,10 @@ public class DashboardController {
     public java.util.List<com.crm.realEstae.dto.MonthlyTrendDTO> getDailyTrend(java.security.Principal principal, @org.springframework.web.bind.annotation.RequestParam String month) {
         return dashboardService.getDailyTrendForMonth(principal.getName(), month);
     }
+
+    @GetMapping("/agent-stats/{agentId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public com.crm.realEstae.dto.AgentPerformanceDTO getAgentStats(@org.springframework.web.bind.annotation.PathVariable java.util.UUID agentId) {
+        return dashboardService.getAgentPerformance(agentId);
+    }
 }

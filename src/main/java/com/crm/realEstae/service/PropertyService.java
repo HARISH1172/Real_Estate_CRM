@@ -89,23 +89,27 @@ public class PropertyService {
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Property not found"));
         
-        if (managerEmail == null || managerEmail.trim().isEmpty()) {
-            property.setAssignedManager(null);
-        } else {
-            User manager = userRepository.findByEmail(managerEmail)
-                    .orElseThrow(() -> new RuntimeException("Manager not found"));
-            
-            // City check: Manager can only manage properties in their jurisdiction
-            String managerCity = manager.getAssignedCity();
-            String propertyCity = property.getAddress() != null ? property.getAddress().getCity() : "";
-            
-            if (managerCity == null || propertyCity == null || !managerCity.equalsIgnoreCase(propertyCity)) {
-                throw new RuntimeException("Regional Constraint: Manager jurisdiction is " + (managerCity != null ? managerCity : "none") + 
-                    " and cannot manage properties in " + (propertyCity != null ? propertyCity : "unknown"));
-            }
-            
-            property.setAssignedManager(manager);
+        if (property.getAssignedManager() != null) {
+            throw new RuntimeException("Property assignment to manager is permanent and cannot be changed or removed");
         }
+
+        if (managerEmail == null || managerEmail.trim().isEmpty()) {
+            throw new RuntimeException("Manager email is required for assignment");
+        }
+
+        User manager = userRepository.findByEmail(managerEmail)
+                .orElseThrow(() -> new RuntimeException("Manager not found"));
+        
+        // City check: Manager can only manage properties in their jurisdiction
+        String managerCity = manager.getAssignedCity();
+        String propertyCity = property.getAddress() != null ? property.getAddress().getCity() : "";
+        
+        if (managerCity == null || propertyCity == null || !managerCity.equalsIgnoreCase(propertyCity)) {
+            throw new RuntimeException("Regional Constraint: Manager jurisdiction is " + (managerCity != null ? managerCity : "none") + 
+                " and cannot manage properties in " + (propertyCity != null ? propertyCity : "unknown"));
+        }
+        
+        property.setAssignedManager(manager);
         propertyRepository.save(property);
     }
 
@@ -133,7 +137,6 @@ public class PropertyService {
         property.setPrice(dto.getPrice());
         property.setType(dto.getType());
         property.setAddress(dto.getAddress());
-        property.setStatus(dto.getStatus());
 
         if (dto.getAssignedManagerId() != null) {
             userRepository.findById(dto.getAssignedManagerId()).ifPresent(property::setAssignedManager);
@@ -151,7 +154,6 @@ public class PropertyService {
         dto.setPrice(property.getPrice());
         dto.setType(property.getType());
         dto.setAddress(property.getAddress());
-        dto.setStatus(property.getStatus());
         dto.setCreatedAt(property.getCreatedAt());
 
         if (property.getAssignedManager() != null) {

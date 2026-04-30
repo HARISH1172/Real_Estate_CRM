@@ -109,6 +109,10 @@ public class AdminService {
             throw new RuntimeException("User is not an agent");
         }
 
+        if (agent.getAssignedManager() != null) {
+            throw new RuntimeException("Agent already has an assigned manager");
+        }
+
         User manager = userRepository.findByEmail(managerEmail)
                 .orElseThrow(() -> new RuntimeException("Manager not found"));
         
@@ -127,13 +131,17 @@ public class AdminService {
         User agent = userRepository.findByEmail(agentEmail)
                 .orElseThrow(() -> new RuntimeException("Agent not found"));
         
-        if (managerEmail == null || managerEmail.trim().isEmpty()) {
-            agent.setAssignedManager(null);
-        } else {
-            User manager = userRepository.findByEmail(managerEmail)
-                    .orElseThrow(() -> new RuntimeException("Manager not found"));
-            agent.setAssignedManager(manager);
+        if (agent.getAssignedManager() != null) {
+            throw new RuntimeException("Manager assignment is permanent and cannot be changed or removed");
         }
+
+        if (managerEmail == null || managerEmail.trim().isEmpty()) {
+            throw new RuntimeException("Manager email is required for assignment");
+        }
+
+        User manager = userRepository.findByEmail(managerEmail)
+                .orElseThrow(() -> new RuntimeException("Manager not found"));
+        agent.setAssignedManager(manager);
         userRepository.save(agent);
     }
 }

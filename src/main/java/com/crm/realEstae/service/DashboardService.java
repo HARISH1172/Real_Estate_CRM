@@ -169,6 +169,25 @@ public class DashboardService {
         return dailyTrend;
     }
 
+    public AgentPerformanceDTO getAgentPerformance(java.util.UUID agentId) {
+        User agent = userRepository.findById(agentId)
+                .orElseThrow(() -> new RuntimeException("Agent not found"));
+        
+        List<Lead> leads = leadRepository.findByAssignedAgent(agent);
+        long totalLeads = leads.size();
+        long bookings = leads.stream().filter(l -> l.getStatus() == LeadStatus.BOOKING).count();
+        double conversionRate = totalLeads == 0 ? 0 : (double) bookings / totalLeads * 100;
+        
+        java.util.Map<String, Long> breakdown = leads.stream()
+                .collect(Collectors.groupingBy(l -> l.getStatus().name(), Collectors.counting()));
+        
+        for (LeadStatus status : LeadStatus.values()) {
+            breakdown.putIfAbsent(status.name(), 0L);
+        }
+
+        return new AgentPerformanceDTO(agent.getId(), agent.getName(), totalLeads, bookings, conversionRate, breakdown);
+    }
+
     private List<AgentPerformanceDTO> calculatePerformance(List<User> agents) {
         if (agents.isEmpty()) return new ArrayList<>();
         
@@ -180,11 +199,16 @@ public class DashboardService {
 
         List<AgentPerformanceDTO> performance = new ArrayList<>();
         for (User agent : agents) {
+            long total = leadCounts.getOrDefault(agent.getId(), 0L);
+            long bookings = bookingCounts.getOrDefault(agent.getId(), 0L);
+            double conversion = total == 0 ? 0 : (double) bookings / total * 100;
             performance.add(new AgentPerformanceDTO(
                     agent.getId(),
                     agent.getName(),
-                    leadCounts.getOrDefault(agent.getId(), 0L),
-                    bookingCounts.getOrDefault(agent.getId(), 0L)
+                    total,
+                    bookings,
+                    conversion,
+                    null // Summary doesn't need full breakdown
             ));
         }
         return performance;

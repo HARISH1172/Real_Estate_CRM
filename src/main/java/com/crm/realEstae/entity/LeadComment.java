@@ -1,6 +1,5 @@
 package com.crm.realEstae.entity;
 
-import com.crm.realEstae.entity.enums.VisitStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,8 +12,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "site_visits")
-public class SiteVisit {
+@Table(name = "lead_comments")
+public class LeadComment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,27 +24,16 @@ public class SiteVisit {
     private Lead lead;
 
     @ManyToOne
-    @JoinColumn(name = "property_id")
-    private Property property;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User author;
 
-    @Column(nullable = false)
-    private LocalDateTime visitTime;
-
-    private String location;
-
-    @Enumerated(EnumType.STRING)
-    private VisitStatus status;
-
-    @Column(length = 1000)
-    private String notes;
+    @Column(length = 2000, nullable = false)
+    private String content;
 
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (status == null) {
-            status = VisitStatus.SCHEDULED;
-        }
     }
 }

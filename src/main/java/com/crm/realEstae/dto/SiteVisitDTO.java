@@ -11,6 +11,8 @@ public class SiteVisitDTO {
     private UUID id;
     private UUID leadId;
     private String leadName;
+    private UUID propertyId;
+    private String propertyName;
     private LocalDateTime visitTime;
     private String location;
     private VisitStatus status;

@@ -40,10 +40,10 @@ public class AuthService {
         return "OTP sent successfully";
     }
 
-    // 🔹 2. Register (WITH OTP VALIDATION)
+    //  Register (WITH OTP VALIDATION)
     public AuthResponseDTO register(RegisterRequestDTO request) {
 
-        // ✅ Verify OTP
+        // Verify OTP
         boolean isValidOtp = otpStore.verifyOtp(request.getEmail(), request.getOtp());
 
         if (!isValidOtp) {
@@ -60,7 +60,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhone(request.getPhone());
 
-        // 🔥 Public registration is ONLY for AGENTS
+        // Registration is ONLY for AGENTS
         user.setRole(Role.AGENT);
         user.setApproved(false);
 
@@ -71,7 +71,7 @@ public class AuthService {
         return buildResponse(user, null);
     }
 
-    // 🔹 3. Login
+    //  Login
     public AuthResponseDTO login(LoginRequestDTO request) {
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -82,7 +82,7 @@ public class AuthService {
         }
 
         if (!user.isApproved()) {
-            throw new RuntimeException("Your account is pending approval by Admin");
+            throw new RuntimeException("You are not approved yet, please wait for admin approval.");
         }
 
         String token = jwtUtil.generateToken(user);
@@ -90,7 +90,6 @@ public class AuthService {
         return buildResponse(user, token);
     }
 
-    // 🔹 Helper
     private AuthResponseDTO buildResponse(User user, String token) {
         AuthResponseDTO response = new AuthResponseDTO();
         response.setToken(token);

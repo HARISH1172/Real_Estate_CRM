@@ -4,6 +4,7 @@ import com.crm.realEstae.dto.LeadDTO;
 import com.crm.realEstae.entity.Lead;
 import com.crm.realEstae.entity.User;
 import com.crm.realEstae.entity.enums.LeadStatus;
+import com.crm.realEstae.entity.enums.Role;
 import com.crm.realEstae.repository.LeadRepository;
 import com.crm.realEstae.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class LeadService {
 
     private final LeadRepository leadRepository;
     private final UserRepository userRepository;
+    private final com.crm.realEstae.repository.PropertyRepository propertyRepository;
 
     public LeadDTO createLead(LeadDTO dto) {
         Lead lead = new Lead();
@@ -29,6 +31,10 @@ public class LeadService {
         lead.setPropertyType(dto.getPropertyType());
         lead.setNotes(dto.getNotes());
         
+        if (dto.getPropertyId() != null) {
+            lead.setProperty(propertyRepository.findById(dto.getPropertyId()).orElse(null));
+        }
+
         if (dto.getAssignedAgentEmail() != null) {
             User agent = userRepository.findByEmail(dto.getAssignedAgentEmail())
                     .orElseThrow(() -> new RuntimeException("Agent not found"));
@@ -47,7 +53,10 @@ public class LeadService {
                 .orElseThrow(() -> new RuntimeException("Lead not found"));
         
         User currentUser = getCurrentUser();
-        if (!lead.getCreatedBy().getEmail().equals(currentUser.getEmail())) {
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean isCreator = lead.getCreatedBy().getEmail().equals(currentUser.getEmail());
+        
+        if (!isAdmin && !isCreator) {
             throw new RuntimeException("You can only update leads created by you");
         }
 
@@ -57,6 +66,12 @@ public class LeadService {
         lead.setStatus(dto.getStatus());
         lead.setPropertyType(dto.getPropertyType());
         lead.setNotes(dto.getNotes());
+
+        if (dto.getPropertyId() != null) {
+            lead.setProperty(propertyRepository.findById(dto.getPropertyId()).orElse(null));
+        } else {
+            lead.setProperty(null);
+        }
 
         if (dto.getAssignedAgentEmail() != null) {
             User agent = userRepository.findByEmail(dto.getAssignedAgentEmail())
@@ -69,6 +84,27 @@ public class LeadService {
     }
 
     public List<LeadDTO> getAllLeads() {
+        User currentUser = getCurrentUser();
+        
+        if (currentUser.getRole() == Role.AGENT) {
+            // If Agent has no manager, they see NOTHING
+            if (currentUser.getAssignedManager() == null) {
+                return java.util.List.of();
+            }
+            // Otherwise they see leads assigned to them
+            return leadRepository.findByAssignedAgent(currentUser).stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        }
+        
+        if (currentUser.getRole() == Role.MANAGER) {
+            // Managers see leads they created
+            return leadRepository.findByCreatedBy(currentUser).stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        }
+
+        // Admins see all
         return leadRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -83,9 +119,14 @@ public class LeadService {
     public void assignLead(UUID leadId, String agentEmail) {
         Lead lead = leadRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found"));
-        User agent = userRepository.findByEmail(agentEmail)
-                .orElseThrow(() -> new RuntimeException("Agent not found"));
-        lead.setAssignedAgent(agent);
+        
+        if (agentEmail == null || agentEmail.trim().isEmpty()) {
+            lead.setAssignedAgent(null);
+        } else {
+            User agent = userRepository.findByEmail(agentEmail)
+                    .orElseThrow(() -> new RuntimeException("Agent not found"));
+            lead.setAssignedAgent(agent);
+        }
         leadRepository.save(lead);
     }
 
@@ -101,6 +142,11 @@ public class LeadService {
         dto.setCreatedAt(lead.getCreatedAt());
         dto.setUpdatedAt(lead.getUpdatedAt());
         
+        if (lead.getProperty() != null) {
+            dto.setPropertyId(lead.getProperty().getId());
+            dto.setPropertyName(lead.getProperty().getName());
+        }
+
         if (lead.getAssignedAgent() != null) {
             dto.setAssignedAgentEmail(lead.getAssignedAgent().getEmail());
             dto.setAgentName(lead.getAssignedAgent().getName());
@@ -118,7 +164,10 @@ public class LeadService {
                 .orElseThrow(() -> new RuntimeException("Lead not found"));
         
         User currentUser = getCurrentUser();
-        if (!lead.getCreatedBy().getEmail().equals(currentUser.getEmail())) {
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean isCreator = lead.getCreatedBy().getEmail().equals(currentUser.getEmail());
+        
+        if (!isAdmin && !isCreator) {
             throw new RuntimeException("You can only delete leads created by you");
         }
         
@@ -146,5 +195,19 @@ public class LeadService {
         lead.setStatus(status);
         Lead updated = leadRepository.save(lead);
         return convertToDTO(updated);
+    }
+
+    public List<LeadDTO> getLeadsByAgent(String agentEmail) {
+        User agent = userRepository.findByEmail(agentEmail)
+                .orElseThrow(() -> new RuntimeException("Agent not found"));
+        
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.ADMIN && (agent.getAssignedManager() == null || !agent.getAssignedManager().getEmail().equals(currentUser.getEmail()))) {
+            throw new RuntimeException("Unauthorized to view this agent's leads");
+        }
+        
+        return leadRepository.findByAssignedAgent(agent).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }

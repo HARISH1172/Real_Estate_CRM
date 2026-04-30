@@ -14,6 +14,8 @@ public class LeadDTO {
     private String phone;
     private LeadStatus status;
     private String propertyType;
+    private UUID propertyId;
+    private String propertyName;
     private String assignedAgentEmail;
     private String agentName;
     private String createdByEmail;

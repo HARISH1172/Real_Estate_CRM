@@ -2,8 +2,11 @@ package com.crm.realEstae.service;
 
 import com.crm.realEstae.dto.SiteVisitDTO;
 import com.crm.realEstae.entity.Lead;
+import com.crm.realEstae.entity.Property;
 import com.crm.realEstae.entity.SiteVisit;
+import com.crm.realEstae.entity.enums.VisitStatus;
 import com.crm.realEstae.repository.LeadRepository;
+import com.crm.realEstae.repository.PropertyRepository;
 import com.crm.realEstae.repository.SiteVisitRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ public class SiteVisitService {
 
     private final SiteVisitRepository siteVisitRepository;
     private final LeadRepository leadRepository;
+    private final PropertyRepository propertyRepository;
 
     public SiteVisitDTO scheduleVisit(SiteVisitDTO dto) {
         Lead lead = leadRepository.findById(dto.getLeadId())
@@ -25,6 +29,13 @@ public class SiteVisitService {
 
         SiteVisit visit = new SiteVisit();
         visit.setLead(lead);
+        
+        if (dto.getPropertyId() != null) {
+            Property property = propertyRepository.findById(dto.getPropertyId())
+                    .orElseThrow(() -> new RuntimeException("Property not found"));
+            visit.setProperty(property);
+        }
+
         visit.setVisitTime(dto.getVisitTime());
         visit.setLocation(dto.getLocation());
         visit.setNotes(dto.getNotes());
@@ -42,7 +53,7 @@ public class SiteVisitService {
                 .collect(Collectors.toList());
     }
 
-    public SiteVisitDTO updateVisitStatus(UUID id, com.crm.realEstae.entity.enums.VisitStatus status) {
+    public SiteVisitDTO updateVisitStatus(UUID id, VisitStatus status) {
         SiteVisit visit = siteVisitRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Site visit not found"));
         visit.setStatus(status);
@@ -59,6 +70,12 @@ public class SiteVisitService {
         dto.setLocation(visit.getLocation());
         dto.setNotes(visit.getNotes());
         dto.setStatus(visit.getStatus());
+        
+        if (visit.getProperty() != null) {
+            dto.setPropertyId(visit.getProperty().getId());
+            dto.setPropertyName(visit.getProperty().getName());
+        }
+        
         return dto;
     }
 }

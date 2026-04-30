@@ -16,12 +16,15 @@ import java.util.List;
 public class ManagerController {
 
     private final UserRepository userRepository;
+    private final com.crm.realEstae.service.AdminService adminService;
 
     @GetMapping("/agents")
     @PreAuthorize("hasRole('MANAGER')")
-    public List<User> getMyAgents(Principal principal) {
+    public List<com.crm.realEstae.dto.UserDTO> getMyAgents(Principal principal) {
         User manager = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Manager not found"));
-        return userRepository.findByAssignedManager(manager);
+        return userRepository.findByAssignedManager(manager).stream()
+                .map(adminService::convertToDTO)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

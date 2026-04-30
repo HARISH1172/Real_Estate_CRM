@@ -1,6 +1,6 @@
 package com.crm.realEstae.entity;
 
-import com.crm.realEstae.entity.enums.LeadStatus;
+import com.crm.realEstae.entity.enums.PropertyType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,8 +13,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "leads")
-public class Lead {
+@Table(name = "properties")
+public class Property {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,30 +23,27 @@ public class Lead {
     @Column(nullable = false)
     private String name;
 
-    private String email;
+    private String description;
 
     @Column(nullable = false)
-    private String phone;
+    private Double price;
 
     @Enumerated(EnumType.STRING)
-    private LeadStatus status;
+    @Column(nullable = false)
+    private PropertyType type;
 
-    private String propertyType;
+    @Embedded
+    private Address address;
 
     @ManyToOne
-    @JoinColumn(name = "property_id")
-    private Property property;
+    @JoinColumn(name = "assigned_manager_id")
+    private User assignedManager;
 
     @ManyToOne
     @JoinColumn(name = "assigned_agent_id")
     private User assignedAgent;
 
-    @ManyToOne
-    @JoinColumn(name = "created_by_id", nullable = false)
-    private User createdBy;
-
-    @Column(length = 1000)
-    private String notes;
+    private String status; // Available, Sold, Under Construction, etc.
 
     private LocalDateTime createdAt;
 
@@ -56,7 +53,7 @@ public class Lead {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) {
-            status = LeadStatus.NEW;
+            status = "Available";
         }
     }
 

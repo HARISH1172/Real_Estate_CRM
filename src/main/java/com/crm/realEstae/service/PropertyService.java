@@ -5,8 +5,11 @@ import com.crm.realEstae.entity.Property;
 import com.crm.realEstae.entity.User;
 import com.crm.realEstae.repository.PropertyRepository;
 import com.crm.realEstae.repository.UserRepository;
+import com.crm.realEstae.repository.LeadRepository;
+import com.crm.realEstae.repository.SiteVisitRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +23,8 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
+    private final LeadRepository leadRepository;
+    private final SiteVisitRepository siteVisitRepository;
 
     public PropertyDTO createProperty(PropertyDTO dto) {
         Property property = new Property();
@@ -127,8 +132,16 @@ public class PropertyService {
         propertyRepository.save(property);
     }
 
+    @Transactional
     public void deleteProperty(UUID id) {
-        propertyRepository.deleteById(id);
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+
+        // 2. Delete associated Site Visits
+        siteVisitRepository.deleteByProperty(property);
+
+        // 3. Delete the property itself
+        propertyRepository.delete(property);
     }
 
     private void updatePropertyFromDTO(Property property, PropertyDTO dto) {

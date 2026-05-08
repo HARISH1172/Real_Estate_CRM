@@ -30,7 +30,7 @@ public class DashboardService {
     private final UserRepository userRepository;
     private final PropertyRepository propertyRepository;
 
-    public DashboardDTO getDashboardStats(String email) {
+    public DashboardDTO getDashboardStats(String email, String city) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -38,19 +38,37 @@ public class DashboardService {
         List<Lead> relevantLeads;
         
         if (user.getRole() == Role.ADMIN) {
-            stats.setTotalLeads(leadRepository.count());
-            stats.setActiveLeads(leadRepository.count() - leadRepository.countByStatus(LeadStatus.BOOKING));
-            stats.setTotalConversions(leadRepository.countByStatus(LeadStatus.BOOKING));
+            // For breakdowns and trends, we still need the list for now or use native queries
+            if (city != null && !city.trim().isEmpty()) {
+                relevantLeads = leadRepository.findAll().stream()
+                        .filter(l -> l.getCreatedBy() != null && city.equalsIgnoreCase(l.getCreatedBy().getAssignedCity()))
+                        .collect(Collectors.toList());
+                
+                stats.setTotalLeads(relevantLeads.size());
+                stats.setActiveLeads(relevantLeads.stream().filter(l -> l.getStatus() != LeadStatus.BOOKING).count());
+                stats.setTotalConversions(relevantLeads.stream().filter(l -> l.getStatus() == LeadStatus.BOOKING).count());
+            } else {
+                relevantLeads = leadRepository.findAll(); 
+                stats.setTotalLeads(leadRepository.count());
+                stats.setActiveLeads(leadRepository.count() - leadRepository.countByStatus(LeadStatus.BOOKING));
+                stats.setTotalConversions(leadRepository.countByStatus(LeadStatus.BOOKING));
+            }
+            
+            List<User> allAgents;
+            if (city != null && !city.trim().isEmpty()) {
+                allAgents = userRepository.findByRole(Role.AGENT).stream()
+                        .filter(a -> a.getAssignedManager() != null && city.equalsIgnoreCase(a.getAssignedManager().getAssignedCity()))
+                        .collect(Collectors.toList());
+            } else {
+                allAgents = userRepository.findByRole(Role.AGENT);
+            }
             stats.setTotalFollowUps(followUpRepository.count());
             stats.setPendingFollowUps(followUpRepository.countByStatus(FollowUpStatus.PENDING));
             stats.setCompletedFollowUps(followUpRepository.countByStatus(FollowUpStatus.COMPLETED));
             stats.setTotalAgents(userRepository.countByRole(Role.AGENT));
             stats.setTotalManagers(userRepository.countByRole(Role.MANAGER));
             stats.setPendingAgents(userRepository.findByRoleAndApproved(Role.AGENT, false));
-            
-            // For breakdowns and trends, we still need the list for now or use native queries
-            relevantLeads = leadRepository.findAll(); 
-            List<User> allAgents = userRepository.findByRole(Role.AGENT);
+
             stats.setAgentPerformance(calculatePerformance(allAgents));
         } else if (user.getRole() == Role.MANAGER) {
             relevantLeads = leadRepository.findByCreatedBy(user);
@@ -79,13 +97,31 @@ public class DashboardService {
                 .collect(Collectors.groupingBy(l -> l.getStatus().name(), Collectors.counting())));
 
         // Property Stats
+        List<Property> relevantProperties;
         if (user.getRole() == Role.ADMIN) {
-            stats.setTotalProperties(propertyRepository.count());
+            if (city != null && !city.trim().isEmpty()) {
+                relevantProperties = propertyRepository.findAll().stream()
+                        .filter(p -> p.getAddress() != null && city.equalsIgnoreCase(p.getAddress().getCity()))
+                        .collect(Collectors.toList());
+            } else {
+                relevantProperties = propertyRepository.findAll();
+            }
         } else if (user.getRole() == Role.MANAGER) {
-            stats.setTotalProperties(propertyRepository.countByAssignedManager(user));
+            relevantProperties = propertyRepository.findByAssignedManager(user);
         } else if (user.getRole() == Role.AGENT) {
-            stats.setTotalProperties(user.getAssignedManager() == null ? 0 : propertyRepository.countByAssignedAgent(user));
+            relevantProperties = user.getAssignedManager() == null ? new ArrayList<>() : propertyRepository.findByAssignedAgent(user);
+        } else {
+            relevantProperties = new ArrayList<>();
         }
+
+        stats.setTotalProperties(relevantProperties.size());
+        stats.setPropertiesByType(relevantProperties.stream()
+                .filter(p -> p.getType() != null)
+                .collect(Collectors.groupingBy(p -> p.getType().name(), Collectors.counting())));
+        
+        stats.setPropertiesByCity(relevantProperties.stream()
+                .filter(p -> p.getAddress() != null && p.getAddress().getCity() != null)
+                .collect(Collectors.groupingBy(p -> p.getAddress().getCity(), Collectors.counting())));
 
         stats.setPropertyTypeBreakdown(relevantLeads.stream()
                 .filter(l -> l.getPropertyType() != null)

@@ -1,6 +1,8 @@
 package com.crm.realEstae.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +23,7 @@ public class LeadComment {
 
     @ManyToOne
     @JoinColumn(name = "lead_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Lead lead;
 
     @ManyToOne

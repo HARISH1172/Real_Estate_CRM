@@ -36,9 +36,9 @@ public class AppConfig {
             PasswordEncoder passwordEncoder) {
 
         DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(userDetailsService); // ✅ REQUIRED
+                new DaoAuthenticationProvider(userDetailsService); // REQUIRED
 
-        provider.setPasswordEncoder(passwordEncoder); // ✅ STILL VALID
+        provider.setPasswordEncoder(passwordEncoder); // STILL VALID
 
         return provider;
     }

@@ -2,6 +2,8 @@ package com.crm.realEstae.entity;
 
 import com.crm.realEstae.entity.enums.LeadStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,16 +35,16 @@ public class Lead {
 
     private String propertyType;
 
-    @ManyToOne
-    @JoinColumn(name = "property_id")
-    private Property property;
+
 
     @ManyToOne
-    @JoinColumn(name = "assigned_agent_id")
+    @JoinColumn(name = "assigned_agent_id", nullable = true)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User assignedAgent;
 
     @ManyToOne
-    @JoinColumn(name = "created_by_id", nullable = false)
+    @JoinColumn(name = "created_by_id", nullable = true)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User createdBy;
 
     @Column(length = 1000)

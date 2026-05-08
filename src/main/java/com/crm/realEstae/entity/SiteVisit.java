@@ -2,6 +2,8 @@ package com.crm.realEstae.entity;
 
 import com.crm.realEstae.entity.enums.VisitStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,10 +24,12 @@ public class SiteVisit {
 
     @ManyToOne
     @JoinColumn(name = "lead_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Lead lead;
 
     @ManyToOne
     @JoinColumn(name = "property_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Property property;
 
     @Column(nullable = false)

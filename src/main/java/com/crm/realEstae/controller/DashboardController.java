@@ -19,8 +19,9 @@ public class DashboardController {
 
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AGENT')")
-    public DashboardDTO getDashboardStats(java.security.Principal principal) {
-        return dashboardService.getDashboardStats(principal.getName());
+    public DashboardDTO getDashboardStats(java.security.Principal principal, 
+                                        @org.springframework.web.bind.annotation.RequestParam(required = false) String city) {
+        return dashboardService.getDashboardStats(principal.getName(), city);
     }
 
     @GetMapping("/daily-trend")

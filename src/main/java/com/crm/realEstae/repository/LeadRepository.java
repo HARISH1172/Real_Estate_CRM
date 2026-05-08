@@ -1,6 +1,7 @@
 package com.crm.realEstae.repository;
 
 import com.crm.realEstae.entity.Lead;
+import com.crm.realEstae.entity.Property;
 import com.crm.realEstae.entity.User;
 import com.crm.realEstae.entity.enums.LeadStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @Repository
 public interface LeadRepository extends JpaRepository<Lead, UUID> {
     List<Lead> findByAssignedAgent(User agent);
+
     long countByStatus(LeadStatus status);
 
     List<Lead> findByCreatedBy(User user);

@@ -37,7 +37,7 @@ public class LeadController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('MANAGER')")
     public LeadDTO updateLead(@PathVariable UUID id, @RequestBody LeadDTO dto) {
         return leadService.updateLead(id, dto);
     }
@@ -49,7 +49,7 @@ public class LeadController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('MANAGER')")
     public void deleteLead(@PathVariable UUID id) {
         leadService.deleteLead(id);
     }

@@ -8,6 +8,7 @@ import com.crm.realEstae.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.stream.Collectors;
 
@@ -18,6 +19,8 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final com.crm.realEstae.repository.LeadRepository leadRepository;
+    private final com.crm.realEstae.repository.PropertyRepository propertyRepository;
+    private final com.crm.realEstae.repository.LeadCommentRepository leadCommentRepository;
 
     public java.util.List<com.crm.realEstae.dto.UserDTO> getAllAgents() {
         return userRepository.findByRole(Role.AGENT).stream()
@@ -94,9 +97,52 @@ public class AdminService {
         return "User updated successfully";
     }
 
+    @Transactional
     public String deleteUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 1. Unlink Agents reporting to this Manager (Clear their Manager and their assignments)
+        userRepository.findByAssignedManager(user).forEach(agent -> {
+            // Cascade Unassignment: Unassign properties and leads from agents who were under this manager
+            propertyRepository.findByAssignedAgent(agent).forEach(p -> {
+                p.setAssignedAgent(null);
+                propertyRepository.save(p);
+            });
+            leadRepository.findByAssignedAgent(agent).forEach(lead -> {
+                lead.setAssignedAgent(null);
+                leadRepository.save(lead);
+            });
+            
+            agent.setAssignedManager(null);
+            userRepository.save(agent);
+        });
+
+        // 2. Unlink Properties (Leave them unassigned)
+        propertyRepository.findByAssignedManager(user).forEach(p -> {
+            p.setAssignedManager(null);
+            propertyRepository.save(p);
+        });
+        propertyRepository.findByAssignedAgent(user).forEach(p -> {
+            p.setAssignedAgent(null);
+            propertyRepository.save(p);
+        });
+
+        // 3. Delete Leads created by this user
+        leadRepository.findByCreatedBy(user).forEach(lead -> {
+            leadRepository.delete(lead);
+        });
+        
+        // 4. Unlink Leads assigned to this user but NOT created by them
+        leadRepository.findByAssignedAgent(user).forEach(lead -> {
+            lead.setAssignedAgent(null);
+            leadRepository.save(lead);
+        });
+
+        // 4. Delete Comments written by this user
+        leadCommentRepository.deleteByAuthor(user);
+
+        // 5. Finally delete the user
         userRepository.delete(user);
         return "User deleted successfully";
     }
@@ -110,7 +156,10 @@ public class AdminService {
         }
 
         if (agent.getAssignedManager() != null) {
-            throw new RuntimeException("Agent already has an assigned manager");
+            // If already assigned, just ensure it's approved. 
+            agent.setApproved(true);
+            userRepository.save(agent);
+            return "Agent approved successfully";
         }
 
         User manager = userRepository.findByEmail(managerEmail)

@@ -9,6 +9,7 @@ import com.crm.realEstae.repository.LeadRepository;
 import com.crm.realEstae.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +23,9 @@ public class LeadService {
     private final LeadRepository leadRepository;
     private final UserRepository userRepository;
     private final com.crm.realEstae.repository.PropertyRepository propertyRepository;
+    private final com.crm.realEstae.repository.LeadCommentRepository leadCommentRepository;
+    private final com.crm.realEstae.repository.FollowUpRepository followUpRepository;
+    private final com.crm.realEstae.repository.SiteVisitRepository siteVisitRepository;
 
     public LeadDTO createLead(LeadDTO dto) {
         Lead lead = new Lead();
@@ -31,9 +35,7 @@ public class LeadService {
         lead.setPropertyType(dto.getPropertyType());
         lead.setNotes(dto.getNotes());
         
-        if (dto.getPropertyId() != null) {
-            lead.setProperty(propertyRepository.findById(dto.getPropertyId()).orElse(null));
-        }
+
 
         if (dto.getAssignedAgentEmail() != null) {
             User agent = userRepository.findByEmail(dto.getAssignedAgentEmail())
@@ -67,11 +69,7 @@ public class LeadService {
         lead.setPropertyType(dto.getPropertyType());
         lead.setNotes(dto.getNotes());
 
-        if (dto.getPropertyId() != null) {
-            lead.setProperty(propertyRepository.findById(dto.getPropertyId()).orElse(null));
-        } else {
-            lead.setProperty(null);
-        }
+
 
         if (dto.getAssignedAgentEmail() != null) {
             User agent = userRepository.findByEmail(dto.getAssignedAgentEmail())
@@ -142,10 +140,7 @@ public class LeadService {
         dto.setCreatedAt(lead.getCreatedAt());
         dto.setUpdatedAt(lead.getUpdatedAt());
         
-        if (lead.getProperty() != null) {
-            dto.setPropertyId(lead.getProperty().getId());
-            dto.setPropertyName(lead.getProperty().getName());
-        }
+
 
         if (lead.getAssignedAgent() != null) {
             dto.setAssignedAgentEmail(lead.getAssignedAgent().getEmail());
@@ -154,11 +149,13 @@ public class LeadService {
 
         if (lead.getCreatedBy() != null) {
             dto.setCreatedByEmail(lead.getCreatedBy().getEmail());
+            dto.setCreatedByName(lead.getCreatedBy().getName());
         }
         
         return dto;
     }
 
+    @Transactional
     public void deleteLead(UUID id) {
         Lead lead = leadRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lead not found"));
@@ -170,7 +167,13 @@ public class LeadService {
         if (!isAdmin && !isCreator) {
             throw new RuntimeException("You can only delete leads created by you");
         }
+
+        // 1. Delete associated data
+        leadCommentRepository.deleteByLeadId(id);
+        followUpRepository.deleteByLead(lead);
+        siteVisitRepository.deleteByLead(lead);
         
+        // 2. Delete the lead itself
         leadRepository.delete(lead);
     }
 

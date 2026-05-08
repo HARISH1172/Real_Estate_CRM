@@ -26,7 +26,9 @@ public class DashboardDTO {
     private List<MonthlyTrendDTO> monthlyTrend;
 
     private long totalProperties;
-    private Map<String, Long> propertyTypeBreakdown;
+    private Map<String, Long> propertyTypeBreakdown; // This is for leads currently, keep for compatibility
+    private Map<String, Long> propertiesByType;     // Actual property breakdown
+    private Map<String, Long> propertiesByCity;     // Actual property breakdown by city
     private Map<String, Long> cityBreakdown;
     private List<MonthlyTrendDTO> dailyTrend;
 }

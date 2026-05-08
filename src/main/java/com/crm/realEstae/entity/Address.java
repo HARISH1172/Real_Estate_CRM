@@ -28,5 +28,9 @@ public class Address {
     @NotBlank(message = "PinCode is required")
     @Column(nullable = false)
     private String pincode;
+
+    private Double latitude;
+
+    private Double longitude;
 }
 

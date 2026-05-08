@@ -14,6 +14,7 @@ import java.util.UUID;
 @Repository
 public interface FollowUpRepository extends JpaRepository<FollowUp, UUID> {
     List<FollowUp> findByLead(Lead lead);
+    void deleteByLead(Lead lead);
     long countByStatus(FollowUpStatus status);
     long countByLeadAssignedAgent(User user);
 }

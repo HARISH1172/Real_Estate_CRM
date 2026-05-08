@@ -25,7 +25,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    // 🔹 1. Send OTP
+    // Send OTP
     public String sendOtp(String email) {
 
         if (userRepository.existsByEmail(email)) {

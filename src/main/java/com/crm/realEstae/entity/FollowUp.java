@@ -2,6 +2,8 @@ package com.crm.realEstae.entity;
 
 import com.crm.realEstae.entity.enums.FollowUpStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +24,7 @@ public class FollowUp {
 
     @ManyToOne
     @JoinColumn(name = "lead_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Lead lead;
 
     @Column(nullable = false)
